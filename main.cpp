@@ -1,16 +1,14 @@
 #include <iostream>
-#include "func.h"
 
-    int main() {
-        int t, mark = 0;
-        printf("Введите количество попыток\n");
-        scanf("%d\n", &t);
-        for (int i = 0; i < t; i++){
-            static float x, y;
-            scanf("%f\t%f", &x, &y);
-            mark += hit(x, y);
-        }
-        printf("Ваш результат\n");
-        printf("%d\n", mark);
-        return 0;
+int main() {
+
+int a, b;
+scanf("%d\t%d", &a, &b);
+int *p1 = &a, *p2 = &b;
+*p1 = *p1 + *p2;
+*p2 = -(*p2 - *p1);
+*p1 = *p1 - *p2;
+printf("%d\t%d", a, b);
+
+return 0;
 }
