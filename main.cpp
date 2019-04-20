@@ -1,6 +1,10 @@
 #include <iostream>
-#include <fstream>
 #include <string>
+#include <set>
+#include <fstream>
+
+#define MAX_VARS 30
+#define SOLVERS_COUNT 5
 
 using namespace std;
 
@@ -36,172 +40,119 @@ public:
         this->output = output;
     }
 
-    void write(int solution) {
+    void write(float solution) {
         ofstream f(output);
         f << solution;
         f.close();
     }
 };
 
-class AbstractSolver {
+class AbstractSolver{
 public:
-    virtual void FormatString(string s) = 0;
-
-    virtual int Solve() = 0;
+    virtual float Solve (int* var) = 0;
 };
 
-class EquationSolver : AbstractSolver {
-    int a, b, c, d, e;
-public:
-    virtual int Solve() = 0;
+class Sol1: public AbstractSolver{
+    float Solve (int* var) override{
+        return  (float) (var[5] - var [4] - var[1]*var[2]) / - var[3];
+    }
+};
 
-    void FormatString(string s) final {
+class Sol2: public AbstractSolver{
+public:
+    float Solve (int* var) override{
+        return var[1] + var[2];
+    }
+};
+
+
+class Sol3: public AbstractSolver{
+public:
+    float Solve (int* var) override{
+        return var[1] - var [2];
+    }
+};
+
+class Sol4: public AbstractSolver{
+public:
+    float Solve (int* var) override{
+        return var[1] * var [2];
+    }
+};
+
+class Sol5: public AbstractSolver{
+public:
+    float Solve (int* var) override{
+        return (float) var[1] / var [2];
+    }
+};
+
+class PracticSolver{
+    AbstractSolver *SolversArr [SOLVERS_COUNT];
+    int count = 0;
+public:
+    void addSolver(AbstractSolver *s){
+        SolversArr[count] = s;
+        count++;
+    }
+
+    int solveByType(int type, int *var){
+        SolversArr[type - 1]->Solve(var);
+    }
+};
+
+class Parser{
+
+    char Num [10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+    bool isNum(char ch){
+        for (int i = 0; i < 10; i++){
+            if (ch == Num[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+
+public:
+    int* Parse (string s){
+        int *var = new int [MAX_VARS];
+        var[0] = 0;
         string temp;
-        int i;
-        for (i = 0; s[i] != '*'; i++) {
-            temp += s[i];
+        for (int i = 0; i <= s.length(); i++){
+            if (!isNum(s[i])){
+                var[0]++;
+                var[var[0]] = atoi (temp.c_str());
+                temp = "";
+            } else {
+                temp += s[i];
+            }
         }
-        a = atoi(temp.c_str());
-        i++;
-        temp = "";
-        for (i; s[i] != '-'; i++) {
-            temp += s[i];
-        }
-        b = atoi(temp.c_str());
-        i++;
-        temp = "";
-        for (i; s[i] != 'x'; i++) {
-            temp += s[i];
-        }
-        c = atoi(temp.c_str());
-        i++;
-        i++;
-        temp = "";
-        for (i; s[i] != '='; i++) {
-            temp += s[i];
-        }
-        d = atoi(temp.c_str());
-        i++;
-        temp = "";
-        for (i; i < s.length(); i++) {
-            temp += s[i];
-        }
-        e = atoi(temp.c_str());
-    }
-
-    int getA() { return a; }
-
-    int getB() { return b; }
-
-    int getC() { return c; }
-
-    int getD() { return d; }
-
-    int getE() { return e; }
-};
-
-class TwoVariablesSolver : AbstractSolver {
-    int a, b;
-public:
-    virtual int Solve() = 0;
-
-    void FormatString(string s) final {
-        string temp;
-        int i;
-        for (i = 0; i < s.length()
-                    && s[i] != '+' && s[i] != '-' && s[i] != '*' && s[i] != '/';
-             i++) {
-            temp += s[i];
-        }
-        i++;
-        a = atoi(temp.c_str());
-        temp = "";
-        for (i; i < s.length(); i++) {
-            temp += s[i];
-        }
-        b = atoi(temp.c_str());
-    }
-
-    int getA() { return a; }
-
-    int getB() { return b; }
-};
-
-class Solver1 : public EquationSolver {
-public:
-    int Solve() final {
-        return (getE() - getD() - getA() * getB()) / -getC();
-    };
-};
-
-class Solver2 : public TwoVariablesSolver {
-public:
-    int Solve() final {
-        return getA() + getB();
-    };
-};
-
-class Solver3 : public TwoVariablesSolver {
-public:
-    int Solve() final {
-        return getA() - getB();
-    };
-};
-
-class Solver4 : public TwoVariablesSolver {
-public:
-    int Solve() final {
-        return getA() * getB();
-    };
-};
-
-class Solver5 : public TwoVariablesSolver {
-public:
-    int Solve() final {
-        return getA() / getB();
-    };
-};
-
-
-class SolveThis {
-    AbstractSolver *s;
-
-public:
-    SolveThis(int format) {
-        switch (format) {
-            case 1:
-                s = (AbstractSolver *) new Solver1;
-                break;
-            case 2:
-                s = (AbstractSolver *) new Solver2;
-                break;
-            case 3:
-                s = (AbstractSolver *) new Solver3;
-                break;
-            case 4:
-                s = (AbstractSolver *) new Solver4;
-                break;
-            case 5:
-                s = (AbstractSolver *) new Solver5;
-                break;
-        }
-    }
-
-    int Solve(string str) {
-        s->FormatString(str);
-        return (s->Solve());
+        return var;
     }
 };
 
 int main(int argc, char *argv[]) {
-    if (argc == 3) {
+    if (argc == 3){
         Reader r(argv[1]);
         r.Read();
-        SolveThis MySolver(r.getType());
-        int solution = MySolver.Solve(r.getString());
+        
+        Parser p;
+        int *var = p.Parse(r.getString());
+        float solution;
+
+        PracticSolver PS;
+        PS.addSolver(new Sol1);
+        PS.addSolver(new Sol2);
+        PS.addSolver(new Sol3);
+        PS.addSolver(new Sol4);
+        PS.addSolver(new Sol5);
+
+        solution = PS.solveByType(r.getType(), var);
+
         Writer w(argv[2]);
         w.write(solution);
-    } else {
+    } else{
         cout << "Неверное количество аргументов программы";
     }
     return 0;
