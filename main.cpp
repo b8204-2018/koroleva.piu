@@ -2,6 +2,7 @@
 #include <string>
 #include <set>
 #include <fstream>
+#include <vector>
 
 #define MAX_VARS 30
 #define SOLVERS_COUNT 5
@@ -47,67 +48,79 @@ public:
     }
 };
 
-class AbstractSolver{
+class AbstractSolver {
 public:
-    virtual float Solve (int* var) = 0;
+    virtual float Solve(int *var) = 0;
 };
 
-class Sol1: public AbstractSolver{
-    float Solve (int* var) override{
-        return  (float) (var[5] - var [4] - var[1]*var[2]) / - var[3];
+class Sol1 : public AbstractSolver {
+    float Solve(int *var) override {
+        if (var[0] == 5) {
+            return (float) (var[5] - var[4] - var[1] * var[2]) / -var[3];
+        }
     }
 };
 
-class Sol2: public AbstractSolver{
+class Sol2 : public AbstractSolver {
 public:
-    float Solve (int* var) override{
-        return var[1] + var[2];
+    float Solve(int *var) override {
+        if (var[0] == 2) {
+            return var[1] + var[2];
+        }
     }
 };
 
 
-class Sol3: public AbstractSolver{
+class Sol3 : public AbstractSolver {
 public:
-    float Solve (int* var) override{
-        return var[1] - var [2];
+    float Solve(int *var) override {
+        if (var[0] == 2) {
+            return var[1] - var[2];
+        }
     }
 };
 
-class Sol4: public AbstractSolver{
+class Sol4 : public AbstractSolver {
 public:
-    float Solve (int* var) override{
-        return var[1] * var [2];
+    float Solve(int *var) override {
+        if (var[0] == 2) {
+            return var[1] * var[2];
+        }
     }
 };
 
-class Sol5: public AbstractSolver{
+class Sol5 : public AbstractSolver {
 public:
-    float Solve (int* var) override{
-        return (float) var[1] / var [2];
+    float Solve(int *var) override {
+        if (var[0] == 2) {
+            return (float) var[1] / var[2];
+        }
     }
 };
 
-class PracticSolver{
-    AbstractSolver *SolversArr [SOLVERS_COUNT];
-    int count = 0;
+class PracticSolver {
+    vector<AbstractSolver *> SolversArr;
 public:
-    void addSolver(AbstractSolver *s){
-        SolversArr[count] = s;
-        count++;
+    void addSolver(AbstractSolver *s) {
+        SolversArr.push_back(s);
     }
 
-    int solveByType(int type, int *var){
-        SolversArr[type - 1]->Solve(var);
+    int solveByType(unsigned int type, int *var) {
+        if (type <= SolversArr.size()) {
+            SolversArr.at(type - 1)->Solve(var);
+        }
     }
+
 };
 
-class Parser{
 
-    char Num [10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+class Parser {
 
-    bool isNum(char ch){
-        for (int i = 0; i < 10; i++){
-            if (ch == Num[i]){
+    char Num[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+    bool isNum(char ch) {
+        for (int i = 0; i < 10; i++) {
+            if (ch == Num[i]) {
                 return true;
             }
         }
@@ -115,14 +128,14 @@ class Parser{
     }
 
 public:
-    int* Parse (string s){
-        int *var = new int [MAX_VARS];
+    int *Parse(string s) {
+        int *var = new int[MAX_VARS];
         var[0] = 0;
         string temp;
-        for (int i = 0; i <= s.length(); i++){
-            if (!isNum(s[i])){
+        for (int i = 0; i <= s.length(); i++) {
+            if (!isNum(s[i])) {
                 var[0]++;
-                var[var[0]] = atoi (temp.c_str());
+                var[var[0]] = atoi(temp.c_str());
                 temp = "";
             } else {
                 temp += s[i];
@@ -133,10 +146,10 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-    if (argc == 3){
+    if (argc == 3) {
         Reader r(argv[1]);
         r.Read();
-        
+
         Parser p;
         int *var = p.Parse(r.getString());
         float solution;
@@ -152,7 +165,7 @@ int main(int argc, char *argv[]) {
 
         Writer w(argv[2]);
         w.write(solution);
-    } else{
+    } else {
         cout << "Неверное количество аргументов программы";
     }
     return 0;
