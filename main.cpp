@@ -1,172 +1,229 @@
 #include <iostream>
-#include <string>
-#include <set>
 #include <fstream>
-#include <vector>
+#include <cmath>
 
-#define MAX_VARS 30
-#define SOLVERS_COUNT 5
+class AbstractSolver;
 
-using namespace std;
+enum exTypes {
+    quadraticEq = 1, plus = 2, minus = 3, mul = 4, del = 5
+};
 
-class Reader {
+class Exercise {
     int type;
-    string ex;
-    string input;
+    std::string exercise;
 public:
-    Reader(string input) {
-        this->input = input;
-    }
-
-    void Read() {
-        ifstream f(input);
-        f >> type;
-        f >> ex;
-        f.close();
+    Exercise(int type, std::string ex) {
+        this->type = type;
+        this->exercise = ex;
     }
 
     int getType() {
         return type;
     }
 
-    string getString() {
-        return ex;
+    std::string getEx() {
+        return exercise;
     }
 };
 
-class Writer {
-    string output;
+
+class Solution {
+    int count;
+    float *roots;
 public:
-    Writer(string output) {
-        this->output = output;
+    Solution(int t, float *roots) {
+        if (t == quadraticEq) {
+            count = 2;
+        } else if (t == plus || t == minus || t == mul || t == del) {
+            count = 1;
+        }
+        this->roots = roots;
     }
 
-    void write(float solution) {
-        ofstream f(output);
-        f << solution;
-        f.close();
+    int getCout() {
+        return count;
+    }
+
+    float getRoot(int i) {
+        return roots[i];
+    }
+
+    friend class AbstractSoler;
+};
+
+class Reader {
+public:
+    Exercise *read(std::string input) {
+        std::fstream f(input);
+        if (f.is_open()) {
+            int t;
+            std::string s;
+            f >> t;
+            f >> s;
+            f.close();
+            return new Exercise(t, s);
+        } else {
+            return nullptr;
+        }
+    }
+
+};
+
+class Writer {
+public:
+    void write(std::string output, Solution s) {
+        std::fstream f(output);
+        if (f.is_open()) {
+            f << "Решения примера:" << std::endl;
+            for (int i = 0; i < s.getCout(); i++) {
+                f << "x" << i + 1 << " = " << s.getRoot(i) << "; ";
+            }
+            f.close();
+        }
+    }
+};
+
+class Parser {
+    char Num[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+    int isNum(char ch) {
+        for (int i = 0; i < 10; i++) {
+            if (ch == Num[i]) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+public:
+    int *Parse(Exercise e) {
+        int *vars;
+        int t = e.getType();
+        if (t == quadraticEq) {
+            vars = new int[5];
+        } else if (t == plus || t == minus || t == mul || t == del) {
+            vars = new int[2];
+        }
+        int count = 0, i = 0;
+        std::string s = e.getEx();
+        while (i < s.size()) {
+            if (isNum(s[i]) == -1) {
+                i++;
+            } else {
+                int temp = 0;
+                int j = i;
+                for (j; isNum(s[j]) != -1; j++) {
+                    temp = temp * 10 + isNum(s[j]);
+                }
+                if (i > 0) {
+                    if (s[i - 1] == '-') {
+                        temp = -temp;
+                    }
+                }
+                vars[count] = temp;
+                count++;
+                i = j;
+            }
+        }
+        return vars;
     }
 };
 
 class AbstractSolver {
+
+
 public:
-    virtual float Solve(int *var) = 0;
+    virtual float *Solve(int *vars) = 0;
 };
 
-class Sol1 : public AbstractSolver {
-    float Solve(int *var) override {
-        if (var[0] == 5) {
-            return (float) (var[5] - var[4] - var[1] * var[2]) / -var[3];
-        }
+
+class TwoVariableMulSolver : public AbstractSolver {
+public:
+    float *Solve(int *vars) override {
+        float *roots = new float[1];
+        roots[0] = vars[0] * vars[1];
+        return roots;
     }
 };
 
-class Sol2 : public AbstractSolver {
+class TwoVariableDelSolver : public AbstractSolver {
 public:
-    float Solve(int *var) override {
-        if (var[0] == 2) {
-            return var[1] + var[2];
-        }
+    float *Solve(int *vars) override {
+        float *roots = new float[1];
+        roots[0] = (float) vars[0] / (float) vars[1];
+        return roots;
     }
 };
 
-
-class Sol3 : public AbstractSolver {
+class TwoVariableAddSolver : public AbstractSolver {
 public:
-    float Solve(int *var) override {
-        if (var[0] == 2) {
-            return var[1] - var[2];
-        }
+    float *Solve(int *vars) override {
+        float *roots = new float[1];
+        roots[0] = vars[0] + vars[1];
+        return roots;
     }
 };
 
-class Sol4 : public AbstractSolver {
+class QadraticEqSolver : public AbstractSolver {
 public:
-    float Solve(int *var) override {
-        if (var[0] == 2) {
-            return var[1] * var[2];
-        }
+    float *Solve(int *vars) override {
+        float *roots = new float[2];
+        float d = (vars[2] * vars[2]) - (4 * vars[0] * (vars[3] - vars[4]));
+        roots[0] = ( - vars[2] + sqrt(d)) / (2 * vars[0]);
+        roots[1] = ( - vars[2] - sqrt(d)) / (2 * vars[0]);
+        return roots;
     }
 };
 
-class Sol5 : public AbstractSolver {
-public:
-    float Solve(int *var) override {
-        if (var[0] == 2) {
-            return (float) var[1] / var[2];
-        }
-    }
-};
 
 class PracticSolver {
-    vector<AbstractSolver *> SolversArr;
+
+    AbstractSolver *asolver = nullptr;
+
+    void setSolver(int t) {
+        switch (t) {
+            case quadraticEq:
+                asolver = new QadraticEqSolver;
+                break;
+            case plus:
+                asolver = new TwoVariableAddSolver;
+                break;
+            case minus:
+                asolver = new TwoVariableAddSolver;
+                break;
+            case mul:
+                asolver = new TwoVariableMulSolver;
+                break;
+            case del:
+                asolver = new TwoVariableDelSolver;
+                break;
+            default:
+                asolver = nullptr;
+        }
+    }
+
+    int *vars;
+
+    Exercise *ex;
+
 public:
-    void addSolver(AbstractSolver *s) {
-        SolversArr.push_back(s);
+    PracticSolver(Exercise *e) {
+        setSolver(e->getType());
+        vars = (new Parser)->Parse(*e);
+        ex = e;
     }
 
-    int solveByType(unsigned int type, int *var) {
-        if (type <= SolversArr.size()) {
-            SolversArr.at(type - 1)->Solve(var);
-        }
+    Solution *Solve() {
+        return (new Solution(ex->getType(), asolver->Solve(vars)));
     }
 
-};
-
-
-class Parser {
-
-    char Num[10] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-
-    bool isNum(char ch) {
-        for (int i = 0; i < 10; i++) {
-            if (ch == Num[i]) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-public:
-    int *Parse(string s) {
-        int *var = new int[MAX_VARS];
-        var[0] = 0;
-        string temp;
-        for (int i = 0; i <= s.length(); i++) {
-            if (!isNum(s[i])) {
-                var[0]++;
-                var[var[0]] = atoi(temp.c_str());
-                temp = "";
-            } else {
-                temp += s[i];
-            }
-        }
-        return var;
-    }
 };
 
 int main(int argc, char *argv[]) {
     if (argc == 3) {
-        Reader r(argv[1]);
-        r.Read();
-
-        Parser p;
-        int *var = p.Parse(r.getString());
-        float solution;
-
-        PracticSolver PS;
-        PS.addSolver(new Sol1);
-        PS.addSolver(new Sol2);
-        PS.addSolver(new Sol3);
-        PS.addSolver(new Sol4);
-        PS.addSolver(new Sol5);
-
-        solution = PS.solveByType(r.getType(), var);
-
-        Writer w(argv[2]);
-        w.write(solution);
+        (new Writer)->write(argv[2], *((new PracticSolver((new Reader)->read(argv[1])))->Solve()));
     } else {
-        cout << "Неверное количество аргументов программы";
+        std::cout << "Неверное количество аргументов программы";
     }
     return 0;
 }

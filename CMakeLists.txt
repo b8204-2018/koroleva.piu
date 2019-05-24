@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
-project(math2)
+project(mathOOP)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(math2 main.cpp)
+add_executable(mathOOP main.cpp)
